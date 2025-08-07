@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JhonBot AI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Markdown-it CDN para renderizar respostas formatadas -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.1.0/dist/markdown-it.min.js"></script>
+    <!-- Google Fonts: Inter + Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Variáveis CSS para cores dinâmicas */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --purple-gradient: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Dark mode variables */
+        .dark {
+            --glass-bg: rgba(0, 0, 0, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Fontes globais */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .dark body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+
+        /* Partículas flutuantes de fundo */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Efeito glassmorphism */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Transições suaves */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Animações de entrada */
+        @keyframes slideInUp {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+
+        @keyframes slideInRight {
+            from { 
+                opacity: 0; 
+                transform: translateX(30px) scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0) scale(1); 
+            }
+        }
+
+        @keyframes slideInLeft {
+            from { 
+                opacity: 0; 
+                transform: translateX(-30px) scale(0.95); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0) scale(1); 
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(102, 126, 234, 0.8), 0 0 40px rgba(118, 75, 162, 0.5); }
+        }
+
+        .message-enter {
+            animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .user-message-enter {
+            animation: slideInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .bot-message-enter {
+            animation: slideInLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Indicador de digitação melhorado */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        .typing-indicator span:nth-child(3) { animation-delay: -0.32s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { 
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar personalizada */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { 
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8), rgba(118, 75, 162, 0.8));
+        }
+
+        /* Blocos de código aprimorados */
+        .prose pre {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 12px;
+            position: relative;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .copy-code-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s ease;
+            transform: translateY(-2px);
+        }
+
+        .prose pre:hover .copy-code-btn {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .copy-code-btn:hover {
+            background: linear-gradient(135deg, #5a67d8, #667eea);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Sugestões rápidas melhoradas */
+        .quick-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        .suggestion-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .suggestion-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .suggestion-btn:hover::before {
+            left: 100%;
+        }
+
+        .suggestion-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.5);
+        }
+
+        /* Botões aprimorados */
+        .gradient-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gradient-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .gradient-btn:hover::before {
+            opacity: 1;
+        }
+
+        .gradient-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .gradient-btn > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header melhorado */
+        .header-glow {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Input área melhorada */
+        .input-area {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-field {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Mensagens melhoradas */
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-message::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .bot-message {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .bot-message {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.1) 100%);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Avatar melhorado */
+        .avatar {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            border-radius: inherit;
+            z-index: -1;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        /* Modal melhorado */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark .modal-content {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Efeitos hover para ícones */
+        .icon-hover {
+            transition: all 0.3s ease;
+        }
+
+        .icon-hover:hover {
+            transform: scale(1.1) rotate(5deg);
+            color: #667eea;
+        }
+
+        /* Texto com gradiente */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        /* Loading spinner melhorado */
+        .spinner {
+            border: 3px solid rgba(102, 126, 234, 0.1);
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsividade melhorada */
+        @media (max-width: 768px) {
+            .floating-particles { display: none; }
+            .suggestion-btn { padding: 10px 16px; font-size: 13px; }
+            .quick-suggestions { gap: 8px; }
+        }
+
+        /* Micro interações */
+        .micro-interaction {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .micro-interaction:active {
+            transform: scale(0.95);
+        }
+
+        /* Brilho sutil */
+        .subtle-glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.1);
+        }
+
+        .dark .subtle-glow {
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.05);
+        }
+
+        /* Estilos para imagens geradas */
+        .generated-image {
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+            height: auto;
+            margin: 16px 0;
+            transition: transform 0.3s ease;
+        }
+
+        .generated-image:hover {
+            transform: scale(1.02);
+        }
+
+        .image-loading {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .image-error {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 0, 0, 0.05));
+            border: 1px solid rgba(255, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 16px 0;
+            color: #ff6b6b;
+        }
+
+        /* Botão de imagem */
+        .image-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .image-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4 relative">
+
+    <!-- Partículas flutuantes de fundo -->
+    <div class="floating-particles">
+        <!-- As partículas serão geradas via JavaScript -->
+    </div>
+
+    <!-- Container Principal do Chat -->
+    <div id="chat-container" class="glass rounded-3xl shadow-2xl w-full max-w-5xl h-[95vh] flex flex-col overflow-hidden subtle-glow relative z-10">
+        
+        <!-- Cabeçalho -->
+        <header class="header-glow p-6 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <div class="avatar p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold gradient-text">JhonBot AI</h1>
+                    <p class="text-white/70 text-sm font-medium">JhonBot • Assistente Premium</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="clear-chat-btn" title="Limpar Conversa" class="icon-hover p-3 rounded-2xl text-white/80 hover:bg-white/10 transition-all duration-300 micro-interaction">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                <button id="theme-toggle-btn" title="Alternar Tema" class="icon-hover p-3 rounded-2xl text-white/80 hover:bg-white/10 transition-all duration-300 micro-interaction">
+                    <!-- Ícones serão inseridos via JS -->
+                </button>
+                <button id="settings-btn" title="Configurações" class="icon-hover p-3 rounded-2xl text-white/80 hover:bg-white/10 transition-all duration-300 micro-interaction">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </button>
+                <button id="logout-btn" title="Sair" class="icon-hover p-3 rounded-2xl text-white/80 hover:bg-white/10 transition-all duration-300 micro-interaction">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Área de Mensagens -->
+        <main id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            <!-- Mensagens serão inseridas aqui -->
+        </main>
+
+        <!-- Rodapé / Área de Input -->
+        <footer class="input-area p-6">
+            <div class="relative flex items-end gap-4">
+                <textarea id="user-input" class="input-field flex-1 w-full p-4 pr-40 rounded-2xl focus:outline-none text-white placeholder-white/60 transition-all duration-300 resize-none" placeholder="Digite sua mensagem..." rows="1"></textarea>
+                <div class="absolute right-3 bottom-1/2 translate-y-1/2 flex items-center gap-2">
+                    <button id="image-btn" class="image-btn micro-interaction" title="Gerar Imagem">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </button>
+                    <button id="stop-btn" class="hidden bg-red-500 hover:bg-red-600 text-white font-semibold p-3 rounded-xl transition-all duration-300 transform hover:scale-105 micro-interaction" title="Parar geração">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 5h10v10H5V5z"></path></svg>
+                    </button>
+                    <button id="send-btn" class="gradient-btn text-white font-semibold p-3 rounded-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed micro-interaction" title="Enviar Mensagem">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Modal de Configurações -->
+    <div id="settings-modal" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50 hidden">
+        <div class="modal-content rounded-3xl shadow-2xl w-full max-w-md p-8 transform scale-95 opacity-0 transition-all duration-300" id="modal-content">
+            <div class="text-center mb-6">
+                <div class="avatar p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg w-16 h-16 mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <h2 class="text-3xl font-bold gradient-text mb-2">Configurações</h2>
+                <p class="text-white/70">Personalize sua experiência</p>
+            </div>
+            <div class="space-y-6">
+                <div>
+                    <label for="api-key-input" class="block text-sm font-semibold text-white/90 mb-3">Chave da API Gemini</label>
+                    <input type="password" id="api-key-input" class="input-field w-full p-4 rounded-xl focus:outline-none text-white placeholder-white/50" placeholder="Sua chave API do Google AI Studio">
+                    <p class="text-xs text-white/60 mt-2 leading-relaxed">Sua chave é salva apenas no seu navegador. Obtenha uma no <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:text-blue-300 underline transition-colors">Google AI Studio</a>.</p>
+                </div>
+                <div>
+                    <label for="pollinations-toggle" class="flex items-center justify-between">
+                        <span class="text-sm font-semibold text-white/90">Geração de Imagens (Pollinations.AI)</span>
+                        <input type="checkbox" id="pollinations-toggle" class="toggle-checkbox" checked>
+                    </span>
+                    <p class="text-xs text-white/60 mt-2 leading-relaxed">Permite gerar imagens usando o serviço gratuito Pollinations.AI</p>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-end gap-4">
+                <button id="close-modal-btn" class="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all duration-300 font-medium micro-interaction">Fechar</button>
+                <button id="save-settings-btn" class="gradient-btn px-6 py-3 text-white rounded-xl transition-all duration-300 font-medium micro-interaction">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- ELEMENTOS DO DOM ---
+    const chatMessages = document.getElementById('chat-messages');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const imageBtn = document.getElementById('image-btn');
+    const clearChatBtn = document.getElementById('clear-chat-btn');
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const modalContent = document.getElementById('modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const pollinationsToggle = document.getElementById('pollinations-toggle');
+    const stopBtn = document.getElementById('stop-btn');
+
+    // --- ESTADO DA APLICAÇÃO ---
+    let conversationHistory = [];
+    let geminiApiKey = '';
+    let imageGenerationEnabled = true;
+    let abortController = null;
+    let md;
+    let isFirstVisit = false;
+
+    // --- ÍCONES SVG ---
+    const sunIcon = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>`;
+    const moonIcon = `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>`;
+    const userIcon = `<div class="w-10 h-10 text-white flex items-center justify-center"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg></div>`;
+    const botIcon = `<div class="w-10 h-10 text-white flex items-center justify-center"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>`;
+
+    // --- SUGESTÕES RÁPIDAS ---
+    const quickSuggestions = [
+        "✨ Oi! Como você está?",
+        "🚀 Gere uma imagem de um gato espacial",
+        "🤖 Qual é o seu nome?",
+        "💡 O que você pode fazer?",
+        "🎨 Crie uma imagem futurística",
+        "🧠 Como funciona a IA?",
+        "🔥 Explique algo interessante",
+        "🖼️ Desenhe um pôr do sol"
+    ];
+
+    // --- SYSTEM PROMPTS PARA MELHOR PERFORMANCE ---
+    const systemPrompt = `Você é o JhonBot Pro, a versão mais avançada da inteligência artificial do Google, executando através do modelo Flash para máxima velocidade e eficiência.
+
+CARACTERÍSTICAS PRINCIPAIS:
+- Você é extremamente inteligente e versátil
+- Pode discutir qualquer tópico de forma profunda e detalhada
+- Tem conhecimento atualizado até 2024
+- É criativo, útil e direto nas respostas
+- Oferece análises completas e precisas
+- Pode ajudar com programação, ciências, artes, literatura, filosofia
+- Fornece explicações claras com exemplos práticos
+- É multilíngue e se adapta ao contexto
+
+MODO DE OPERAÇÃO:
+- Responda SEMPRE em português brasileiro fluente
+- Seja direto, preciso e completo em todas as respostas
+- Trate o usuário com respeito e inteligência
+- Forneça informações factuais e bem fundamentadas
+- Seja conversacional mas mantenha expertise técnica
+- Ofereça múltiplas perspectivas quando relevante
+- Use exemplos práticos para ilustrar conceitos
+
+Você está operando como "JhonBot Pro flash" - combinando inteligência avançada com velocidade otimizada.`;
+
+    // --- GERAÇÃO DE PARTÍCULAS ---
+    const createFloatingParticles = () => {
+        const particlesContainer = document.querySelector('.floating-particles');
+        const particleCount = 50;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+    };
+
+    // --- FUNÇÕES DE UI E TEMA ---
+    const toggleModal = (show) => {
+        if (show) {
+            settingsModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        } else {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => settingsModal.classList.add('hidden'), 300);
+        }
+    };
+
+    const toggleTheme = () => {
+        document.documentElement.classList.toggle('dark');
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        themeToggleBtn.innerHTML = isDarkMode ? sunIcon : moonIcon;
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    };
+
+    const initializeTheme = () => {
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.documentElement.classList.add('dark');
+            themeToggleBtn.innerHTML = sunIcon;
+        } else {
+            themeToggleBtn.innerHTML = moonIcon;
+        }
+    };
+
+    // --- FUNÇÃO DE GERAÇÃO DE IMAGENS ---
+    const generateImage = async (prompt) => {
+        if (!imageGenerationEnabled) {
+            addMessage('bot', '🚫 A geração de imagens está desabilitada. Ative nas configurações!', { isError: true });
+            return;
+        }
+
+        const imageContainer = document.createElement('div');
+        imageContainer.classList.add('image-loading');
+        imageContainer.innerHTML = `
+            <div class="flex items-center justify-center gap-3">
+                <div class="spinner"></div>
+                <span class="text-white/80">🎨 Gerando imagem: "${prompt}"</span>
+            </div>
+        `;
+
+        const messageWrapper = addMessage('bot', '');
+        messageWrapper.querySelector('.bot-message').appendChild(imageContainer);
+
+        try {
+            // Codifica o prompt para URL
+            const encodedPrompt = encodeURIComponent(prompt);
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=512&height=512&seed=${Math.floor(Math.random() * 1000000)}`;
+
+            // Pré-carrega a imagem
+            const img = new Image();
+            img.onload = () => {
+                imageContainer.innerHTML = `
+                    <img src="${imageUrl}" alt="Imagem gerada: ${prompt}" class="generated-image" />
+                    <p class="text-white/70 text-sm mt-3">🎨 <strong>Prompt:</strong> ${prompt}</p>
+                    <button class="mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-white text-sm transition-all" onclick="window.open('${imageUrl}', '_blank')">📥 Baixar Imagem</button>
+                `;
+                imageContainer.classList.remove('image-loading');
+            };
+
+            img.onerror = () => {
+                imageContainer.innerHTML = `
+                    <div class="image-error">
+                        <p>❌ Erro ao gerar a imagem</p>
+                        <p class="text-sm mt-2 opacity-70">Prompt: ${prompt}</p>
+                        <button class="mt-3 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white text-sm transition-all" onclick="generateImage('${prompt.replace(/'/g, "\\'")}')">🔄 Tentar Novamente</button>
+                    </div>
+                `;
+                imageContainer.classList.remove('image-loading');
+                imageContainer.classList.add('image-error');
+            };
+
+            img.src = imageUrl;
+
+        } catch (error) {
+            console.error('Erro na geração de imagem:', error);
+            imageContainer.innerHTML = `
+                <div class="image-error">
+                    <p>❌ Falha na geração da imagem</p>
+                    <p class="text-sm mt-2 opacity-70">${error.message}</p>
+                </div>
+            `;
+            imageContainer.classList.remove('image-loading');
+        }
+    };
+
+    const addQuickSuggestions = (messageElement) => {
+        const suggestionsContainer = document.createElement('div');
+        suggestionsContainer.classList.add('quick-suggestions');
+        
+        // Seleciona 4 sugestões aleatórias
+        const shuffledSuggestions = [...quickSuggestions].sort(() => 0.5 - Math.random()).slice(0, 4);
+        
+        shuffledSuggestions.forEach(suggestion => {
+            const btn = document.createElement('button');
+            btn.classList.add('suggestion-btn');
+            btn.textContent = suggestion;
+            btn.addEventListener('click', () => {
+                const cleanSuggestion = suggestion.replace(/[✨🚀🤖💡😄🧠🔥💬🎨🖼️]/g, '').trim();
+                userInput.value = cleanSuggestion;
+                
+                // Verifica se é uma sugestão de imagem
+                if (suggestion.includes('imagem') || suggestion.includes('Crie') || suggestion.includes('Desenhe') || suggestion.includes('Gere')) {
+                    generateImage(cleanSuggestion);
+                } else {
+                    sendMessageToGemini(cleanSuggestion);
+                }
+                suggestionsContainer.remove();
+            });
+            suggestionsContainer.appendChild(btn);
+        });
+        
+        messageElement.querySelector('.bot-message').appendChild(suggestionsContainer);
+    };
+
+    const addCopyCodeListeners = () => {
+        chatMessages.querySelectorAll('.copy-code-btn').forEach(button => {
+            if (button.dataset.listenerAttached) return;
+            button.dataset.listenerAttached = 'true';
+            button.addEventListener('click', (e) => {
+                const pre = e.target.closest('pre');
+                const code = pre.querySelector('code');
+                try {
+                    if (code) {
+                        const range = document.createRange();
+                        range.selectNode(code);
+                        window.getSelection().removeAllRanges();
+                        window.getSelection().addRange(range);
+                        document.execCommand('copy');
+                        e.target.textContent = '✅ Copiado!';
+                        setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+                    }
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    e.target.textContent = '❌ Erro!';
+                    setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+                }
+            });
+        });
+    };
+
+    const addMessage = (sender, text, { isTyping = false, isError = false, showSuggestions = false } = {}) => {
+        console.log(`Adicionando mensagem de ${sender}:`, text.substring(0, 100) + "...");
+        
+        const messageWrapper = document.createElement('div');
+        messageWrapper.classList.add('flex', 'items-start', 'gap-4', 'max-w-[85%]');
+        
+        const iconContainer = document.createElement('div');
+        iconContainer.classList.add('avatar', 'w-12', 'h-12', 'rounded-2xl', 'flex-shrink-0', 'flex', 'items-center', 'justify-center', 'shadow-lg');
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('p-4', 'rounded-2xl', 'shadow-lg', 'prose', 'dark:prose-invert', 'prose-sm', 'max-w-full', 'break-words', 'backdrop-blur-sm');
+        
+        if (sender === 'user') {
+            messageWrapper.classList.add('self-end', 'flex-row-reverse', 'user-message-enter');
+            iconContainer.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-purple-600');
+            iconContainer.innerHTML = userIcon;
+            messageBubble.classList.add('user-message', 'text-white', 'prose-p:text-white', 'prose-strong:text-white', 'prose-a:text-blue-200');
+            messageBubble.textContent = text;
+        } else { // bot
+            messageWrapper.classList.add('self-start', 'bot-message-enter');
+            iconContainer.classList.add('bg-gradient-to-r', 'from-gray-600', 'to-gray-800');
+            iconContainer.innerHTML = botIcon;
+            messageBubble.classList.add('bot-message', 'text-white');
+            
+            if (isError) {
+                messageBubble.classList.remove('bot-message');
+                messageBubble.classList.add('bg-gradient-to-r', 'from-red-500', 'to-red-600', 'text-white');
+            }
+
+            if (isTyping) {
+                messageBubble.innerHTML = `<div class="typing-indicator flex items-center justify-center h-full gap-2"><span></span><span></span><span></span></div>`;
+            } else if (md && text.trim()) {
+                try {
+                    let renderedHtml = md.render(text);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = renderedHtml;
+                    tempDiv.querySelectorAll('pre').forEach(pre => {
+                        pre.insertAdjacentHTML('beforeend', `<button class="copy-code-btn">📋 Copiar</button>`);
+                    });
+                    messageBubble.innerHTML = tempDiv.innerHTML;
+                } catch (e) {
+                    console.error('Erro ao renderizar markdown:', e);
+                    messageBubble.textContent = text;
+                }
+            } else {
+                messageBubble.textContent = text;
+            }
+        }
+
+        messageWrapper.appendChild(iconContainer);
+        messageWrapper.appendChild(messageBubble);
+        
+        if (chatMessages) {
+            chatMessages.appendChild(messageWrapper);
+            console.log("Mensagem adicionada ao DOM");
+            
+            // Scroll suave para baixo
+            setTimeout(() => {
+                chatMessages.scrollTo({
+                    top: chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
+            
+            // Adiciona sugestões se solicitado
+            if (showSuggestions && sender === 'bot') {
+                setTimeout(() => addQuickSuggestions(messageWrapper), 800);
+            }
+            
+            if (sender === 'bot' && !isTyping) {
+                setTimeout(() => addCopyCodeListeners(), 100);
+            }
+        } else {
+            console.error("chatMessages container not found!");
+        }
+        
+        return messageWrapper;
+    };
+
+    // --- LÓGICA DO CHAT E API ---
+    const clearChat = () => {
+        chatMessages.innerHTML = '';
+        conversationHistory = [];
+        localStorage.removeItem('chatHistory');
+        localStorage.removeItem('hasVisited');
+        isFirstVisit = true;
+        showWelcomeMessage();
+    };
+
+    const showWelcomeMessage = () => {
+        if (isFirstVisit) {
+            const welcomeMsg = "🚀 **JhonBot Pro** ativado com sucesso!\n\n⚡ **Status**: Modelo Flash • Inteligência Pro • Velocidade Otimizada\n\n💎 **Capacidades avançadas:**\n- 🧠 Análise profunda e raciocínio avançado\n- 💻 Programação e desenvolvimento expert\n- 🎨 **Geração de imagens** (clique no botão 🖼️ ou peça!)\n- 📚 Conhecimento amplo e atualizado\n- 🔬 Resolução de problemas complexos\n- ✍️ Criação de conteúdo criativo\n- 🌍 Informações precisas e detalhadas\n- ⚡ Respostas rápidas e inteligentes\n\n**JhonBot Pro** está aqui para ajudar com qualquer desafio intelectual!\n\nComo posso ajudar você hoje?";
+            addMessage('bot', welcomeMsg, { showSuggestions: true });
+        } else {
+            const welcomeMessages = [
+                "⚡ **JhonBot Pro** está de volta! Pronto para conversas inteligentes e rápidas!",
+                "🚀 **Modo Pro** ativado! Velocidade do Flash + Inteligência avançada à sua disposição!",
+                "💎 **JhonBot Pro** online! Combinando o melhor da IA com velocidade otimizada!",
+                "✨ **Versão Premium** ativa! JhonBot Pro Flash pronto para qualquer desafio!"
+            ];
+            
+            const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+            addMessage('bot', randomWelcome, { showSuggestions: true });
+        }
+    };
+
+    const loadChatHistory = () => {
+        try {
+            const savedHistory = localStorage.getItem('chatHistory');
+            const hasVisited = localStorage.getItem('hasVisited');
+            
+            if (!hasVisited) {
+                isFirstVisit = true;
+                localStorage.setItem('hasVisited', 'true');
+                showWelcomeMessage();
+            } else if (savedHistory) {
+                conversationHistory = JSON.parse(savedHistory);
+                chatMessages.innerHTML = '';
+                conversationHistory.forEach(turn => {
+                    const role = turn.role === 'user' ? 'user' : 'bot';
+                    addMessage(role, turn.parts[0].text);
+                });
+                addMessage('bot', "🔄 **JhonBot Pro** reconectado! Continue nossa conversa de onde paramos.");
+            } else {
+                showWelcomeMessage();
+            }
+        } catch (e) {
+            console.error("Falha ao carregar histórico:", e);
+            localStorage.removeItem('chatHistory');
+            isFirstVisit = true;
+            addMessage('bot', '⚠️ Ops! Houve um problema ao carregar o histórico, mas não se preocupe. Sou o **JhonBot Pro** e vamos começar uma nova conversa incrível!', { showSuggestions: true });
+        }
+    };
+
+    const saveChatHistory = () => {
+        try {
+            localStorage.setItem('chatHistory', JSON.stringify(conversationHistory));
+        } catch (e) {
+            console.error("Falha ao salvar histórico:", e);
+        }
+    };
+
+    const handleApiError = async (response) => {
+        let errorMsg = `❌ Erro na API: ${response.status} ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            errorMsg = `❌ ${errorData.error?.message || 'Resposta de erro malformada.'}`;
+        } catch (e) {
+            console.error("Não foi possível analisar a resposta de erro da API.", e);
+        }
+        return errorMsg;
+    };
+
+    const sendMessageToGemini = async (message, isAutoMessage = false) => {
+        if (!geminiApiKey) {
+            if (!isAutoMessage) {
+                addMessage('bot', '🔑 Olá! Sou o **JhonBot Pro** e preciso que você configure sua chave da API do Google AI Studio nas configurações para começarmos nossa conversa incrível! Clique no ⚙️ para configurar.', { isError: true });
+                toggleModal(true);
+            }
+            return;
+        }
+
+        // Remove sugestões existentes
+        document.querySelectorAll('.quick-suggestions').forEach(suggestions => {
+            suggestions.remove();
+        });
+
+        // Adiciona mensagem do usuário
+        if (!isAutoMessage) {
+            addMessage('user', message);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+        }
+        
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<div class="spinner"></div>';
+        stopBtn.classList.remove('hidden');
+        
+        conversationHistory.push({ role: "user", parts: [{ text: message }] });
+        const typingIndicator = addMessage('bot', '', { isTyping: true });
+
+        abortController = new AbortController();
+
+        try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+
+            // Adiciona system prompt se for a primeira mensagem
+            const messages = conversationHistory.length === 1 ? 
+                [{ role: "user", parts: [{ text: systemPrompt + "\n\nUsuário: " + message }] }] : 
+                conversationHistory;
+
+            console.log("Enviando para API:", { message: message.substring(0, 100) + "..." });
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    contents: messages,
+                    generationConfig: {
+                        temperature: 0.9,
+                        topK: 1,
+                        topP: 1,
+                        maxOutputTokens: 8192,
+                    },
+                    safetySettings: [
+                        {
+                            "category": "HARM_CATEGORY_HARASSMENT",
+                            "threshold": "BLOCK_ONLY_HIGH"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_HATE_SPEECH",
+                            "threshold": "BLOCK_ONLY_HIGH"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                            "threshold": "BLOCK_ONLY_HIGH"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                            "threshold": "BLOCK_ONLY_HIGH"
+                        }
+                    ]
+                }),
+                signal: abortController.signal
+            });
+
+            // Remove indicador de digitação
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatMessages.removeChild(typingIndicator);
+            }
+
+            if (!response.ok) {
+                const detailedError = await handleApiError(response);
+                throw new Error(detailedError);
+            }
+
+            const result = await response.json();
+            console.log("Resposta da API:", result);
+            
+            if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts[0]) {
+                const botResponse = result.candidates[0].content.parts[0].text;
+                
+                addMessage('bot', botResponse);
+                
+                conversationHistory.push({ role: "model", parts: [{ text: botResponse }] });
+                saveChatHistory();
+                
+            } else {
+                console.error("Estrutura de resposta inválida:", result);
+                const reason = result.promptFeedback?.blockReason || 'sem resposta válida';
+                addMessage('bot', `🚫 A API não retornou uma resposta válida. Motivo: ${reason}. Como **JhonBot Pro**, posso tentar reformular sua pergunta de forma diferente.`, { isError: true });
+            }
+
+        } catch (error) {
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatMessages.removeChild(typingIndicator);
+            }
+            
+            if (error.name === 'AbortError') {
+                addMessage('bot', '⏹️ Geração de resposta interrompida. Sou o **JhonBot Pro** e estou pronto para sua próxima pergunta!');
+            } else {
+                console.error('Erro ao chamar API:', error);
+                addMessage('bot', `💥 Ops! Algo deu errado com a conexão: ${error.message}\n\nComo **JhonBot Pro**, posso tentar novamente quando você quiser!`, { isError: true });
+            }
+        } finally {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>';
+            stopBtn.classList.add('hidden');
+            userInput.focus();
+            abortController = null;
+        }
+    };
+
+    // --- DETECÇÃO DE COMANDOS DE IMAGEM ---
+    const detectImageCommand = (message) => {
+        const imageKeywords = [
+            'gere uma imagem', 'crie uma imagem', 'desenhe', 'faça uma imagem', 
+            'gerar imagem', 'criar imagem', 'make image', 'generate image', 
+            'draw', 'paint', 'ilustre', 'visualize', 'mostre uma imagem'
+        ];
+        
+        const lowerMessage = message.toLowerCase();
+        return imageKeywords.some(keyword => lowerMessage.includes(keyword));
+    };
+
+    const extractImagePrompt = (message) => {
+        const patterns = [
+            /(?:gere uma imagem|crie uma imagem|desenhe|faça uma imagem|gerar imagem|criar imagem|make image|generate image|draw|paint|ilustre|visualize|mostre uma imagem)(?:\s+de\s+|\s+da\s+|\s+do\s+|\s+uma\s+|\s+um\s+|\s+of\s+|\s+a\s+|\s*:\s*|\s+)(.+)/i
+        ];
+        
+        for (const pattern of patterns) {
+            const match = message.match(pattern);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+        }
+        
+        return message;
+    };
+
+    // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+    const initializeApp = () => {
+        // Inicializa Markdown-it
+        if (window.markdownit) {
+            md = window.markdownit({ html: false, linkify: true, typographer: true });
+        } else {
+            console.error("Markdown-it não carregado.");
+        }
+
+        // Cria partículas flutuantes
+        createFloatingParticles();
+
+        // Inicializa tema
+        initializeTheme();
+        
+        // Carrega configurações
+        geminiApiKey = localStorage.getItem('geminiApiKey');
+        imageGenerationEnabled = localStorage.getItem('imageGenerationEnabled') !== 'false';
+        
+        apiKeyInput.value = geminiApiKey || '';
+        pollinationsToggle.checked = imageGenerationEnabled;
+        
+        loadChatHistory();
+
+        // Abre modal se não tiver API key
+        if (!geminiApiKey && !localStorage.getItem('hasVisited')) {
+            setTimeout(() => toggleModal(true), 5000);
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                // Verifica se é comando de imagem
+                if (detectImageCommand(message)) {
+                    const imagePrompt = extractImagePrompt(message);
+                    addMessage('user', message);
+                    userInput.value = '';
+                    userInput.style.height = 'auto';
+                    generateImage(imagePrompt);
+                } else {
+                    sendMessageToGemini(message, false);
+                }
+            }
+        });
+
+        imageBtn.addEventListener('click', () => {
+            const prompt = userInput.value.trim();
+            if (prompt) {
+                addMessage('user', `🎨 Gerar imagem: ${prompt}`);
+                generateImage(prompt);
+                userInput.value = '';
+                userInput.style.height = 'auto';
+            } else {
+                addMessage('bot', '🎨 Digite uma descrição para a imagem que você quer gerar e clique no botão de imagem! \n\nExemplo: "um gato astronauta no espaço"');
+            }
+        });
+
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+        
+        userInput.addEventListener('input', () => {
+            userInput.style.height = 'auto';
+            userInput.style.height = userInput.scrollHeight + 'px';
+        });
+        
+        clearChatBtn.addEventListener('click', clearChat);
+        themeToggleBtn.addEventListener('click', toggleTheme);
+        
+        settingsBtn.addEventListener('click', () => toggleModal(true));
+        closeModalBtn.addEventListener('click', () => toggleModal(false));
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) toggleModal(false);
+        });
+
+        saveSettingsBtn.addEventListener('click', () => {
+            const newKey = apiKeyInput.value.trim();
+            geminiApiKey = newKey;
+            imageGenerationEnabled = pollinationsToggle.checked;
+            
+            localStorage.setItem('geminiApiKey', newKey);
+            localStorage.setItem('imageGenerationEnabled', imageGenerationEnabled);
+            
+            toggleModal(false);
+            addMessage('bot', '✅ **JhonBot Pro** configurado com sucesso! Chave de API salva e geração de imagens ' + (imageGenerationEnabled ? 'ativada' : 'desativada') + '. Agora podemos ter conversas incríveis!');
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (abortController) abortController.abort();
+        });
+
+        // Foco inicial
+        userInput.focus();
+        
+        // Easter eggs e comandos especiais
+        window.generateImage = generateImage; // Torna a função global para uso em botões
+    };
+
+    document.addEventListener('DOMContentLoaded', initializeApp);
+</script>
+
+</body>
+</html>
